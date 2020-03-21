@@ -20,7 +20,7 @@
 
 ## **Запуск**
 
-**Важно**: я работал и запускал не на учебном кластере, поэтому мой build скрипт отличается от предложенного преподавателем. Скрипт для общего кластера — teacher.sh
+**Важно**: я работал и запускал не на учебном кластере, поэтому мой build скрипт отличается от предложенного преподавателем.
 1. Запустите файл ```build.sh количество_процессов число_разбиений_отрезка```.
 2. Или запустите в командной оболочке Unix:
 
@@ -29,6 +29,21 @@ mpicc -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion
 -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=undefined \
 -fno-sanitize-recover=all -fstack-protector -o test solution.cpp -lm
 mpirun -np number_of_processes ./test partition_of_the_grid
+```
+
+Скрипт для общего кластера смотрите на сайте lms.mipt.ru в вкладке "Параллельное программирование". В методичке "Учебный кластер" описан процесс поставки задачи в очередь и исполнения на учебном кластере.
+
+## **Результат**
+
+В файле ```1.txt``` в первой колонке записано количество процессов, во второй — среднее время исполнения. Для усреднения программа исполнялась 1000 раз. В файле ```graph1.txt``` во второй колонке записаны значения ускорения, в файле ```graph2.txt``` — значения эффективностей.
+Далее с помощью команды `gnuplot` я показывал рисовал графики следующими командами:
+```
+set terminal png size 1024, 720
+set xlabel "Number of processes"
+set ylabel "Acceleration/Efficiency"
+set xrange [1:24]
+set output 'graph№.png'
+plot "graph№.txt" with lines
 ```
 ---
 # **Distributed systems**
