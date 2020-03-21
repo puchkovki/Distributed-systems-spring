@@ -18,7 +18,7 @@ double Func(double x) {
 //Формула Котеса рассчета определенного интеграла для равномерной сетки
 double Integral(size_t left_index, size_t right_index, double h) {
     double I = (Func(right_index * h) + Func(left_index * h)) / 2;
-    
+
     for(size_t i = left_index + 1; i < right_index; i++) {
         I += Func(i * h);
     }
@@ -28,7 +28,7 @@ double Integral(size_t left_index, size_t right_index, double h) {
 
 int main(int argc, char **argv)
 {
-    //Для корректной работы функции
+    //Для корректной работы функции требуется не менее 3 аргументов
     if (argc < 2)
 	{
         printf("No number of partitions!");
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
     //Среднее время выполнения
     double averaged_time = 0;
-    for(int i = 0; i < numexp; i++)
+    for(size_t i = 0; i < numexp; i++)
     {
         //Начинаем отсчет времени
         double t = MPI_Wtime();
