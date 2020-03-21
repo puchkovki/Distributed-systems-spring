@@ -28,8 +28,8 @@ double Integral(size_t left_index, size_t right_index, double h) {
 
 int main(int argc, char **argv)
 {
-    //Для корректной работы функции требуется не менее 3 аргументов
-    if (argc < 3)
+    //Для корректной работы функции требуется не менее 2 аргументов
+    if (argc < 2)
 	{
         printf("No number of partitions!");
 		exit(1);
