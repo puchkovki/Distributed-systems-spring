@@ -16,4 +16,9 @@ set xlabel "Number of processes"
 set ylabel "Acceleration"
 set xrange [1:24]
 set output 'name.png'
-plot "№.txt" with lines*/
+plot "№.txt" with lines
+
+
+scp -P 50506 solution.c puchkovki@remote.vdi.mipt.ru:~
+ssh -p 50506 puchkovki@remote.vdi.mipt.ru
+ssh s77403@head.vdi.mipt.ru*/
