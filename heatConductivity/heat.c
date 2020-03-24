@@ -20,10 +20,16 @@ int main(int argc, char **argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	size_t Time = atoll(argv[1]);
+	double Time = atof(argv[1]);
+	if (Time < 0) {
+		printf("Sorry, timemachine hasn't been invented yet!");
+	}
 
     //Число разбиений по координате
-	size_t M = atoll(argv[2]);
+	int M = atoi(argv[2]);
+	if (M < 2) {
+		printf("Invalid values!\n");
+	}
     //Шаг по координате
 	double h = Length / M;
 
@@ -39,8 +45,8 @@ int main(int argc, char **argv)
     //Счетчики для циклов по времени и координате
 	int m, n;
 
-	// Задаем начальные условия
-	for (m = M - 1; m < M + 1; m--) 
+	// Задаем начальные условия (f(x) = 0 )
+	for (m = 0; m < M; m++) 
     {
 		u0[m] = u1[m] = 0.0;
 	}
@@ -49,18 +55,43 @@ int main(int argc, char **argv)
 	u0[0] = u1[0] = Temperature_1;
 	u0[M - 1] = u1[M - 1] = Temperature_2;
 	
-	// Интегрируем по времени
+	//Передаем каждому процессу "свои" индексы интегрирования
+    size_t left_index = (rank != 0) ? rank * (M / size) : 1;
+    size_t right_index = (rank != size - 1) ? (rank + 1) * (M / size) : M - 1;
+
+	 // Интегрируем по времени
 	for (n = 0; n < N; n++) {
-		//добавить обмен данными краевых узлов send recv send recv
-		for (m = 1; m < M - 1; m++) {//изменить границы отрезков на "свои" для каждого процесса
-			u1[m] = u0[m] + tau / h / h  * (u0[m-1] - 2.0 * u0[m] + u0[m+1]);
+		// Обмен краевыми узлами
+		MPI_Send(&u1[left_index], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Recv(&u1[left_index - 1], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Send(&u1[right_index - 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Recv(&u1[right_index], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		
+		for (m = left_index; m < right_index - 1; m++) {
+			u1[m] = u0[m] + 0.3  * (u0[m-1] - 2.0 * u0[m] + u0[m+1]);
 		}
 		double *t = u0;
 		u0 = u1;
 		u1 = t;
 	}
+
+	//Обновление данных со всех процессов после последней итерации цикла
+	if((rank != 0) && (rank != size - 1)) {
+		MPI_Send(&u1[left_index], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Recv(&u1[left_index - 1], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Send(&u1[right_index - 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Recv(&u1[right_index], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	}
+	if(rank == 0) {
+		MPI_Send(&u1[right_index - 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Recv(&u1[right_index], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	}
+	if(rank == size - 1) {
+		MPI_Send(&u1[left_index], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Recv(&u1[left_index - 1], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	}
 	
-	//   Вывод на экран
+	// Вывод на экран
 	for (m = 0; m < M; m++) {
 		printf("%lf %lf\n", m * h, u1[m]);
 	}
