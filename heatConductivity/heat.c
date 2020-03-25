@@ -20,6 +20,7 @@ int main(int argc, char **argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+	// Считываем время, когда хотим узнать распределение температуры
 	double Time = atof(argv[1]);
 	if (Time < 0) {
 		printf("Sorry, timemachine hasn't been invented yet!");
@@ -30,6 +31,7 @@ int main(int argc, char **argv)
 	if (M < 2) {
 		printf("Invalid values!\n");
 	}
+
     //Шаг по координате
 	double h = Length / M;
 
@@ -43,8 +45,11 @@ int main(int argc, char **argv)
 	double *u1 = (double*) malloc(sizeof(double) * M);
 
     //Счетчики для циклов по времени и координате
-	int m, n;
+	size_t m, n;
 
+	//Начинаем отсчет времени
+	double t = MPI_Wtime();
+	
 	// Задаем начальные условия (f(x) = 0 )
 	for (m = 0; m < M; m++) 
     {
@@ -57,43 +62,60 @@ int main(int argc, char **argv)
 	
 	//Передаем каждому процессу "свои" индексы интегрирования
     size_t left_index = (rank != 0) ? rank * (M / size) : 1;
-    size_t right_index = (rank != size - 1) ? (rank + 1) * (M / size) : M - 1;
+    size_t right_index = /*(rank != size - 1) ? */(rank + 1) * (M / size) - 1/* : M - 1*/;
+
+	printf("rank = %d left_index = %d right_index = %d\n", rank, left_index, right_index);
 
 	 // Интегрируем по времени
-	for (n = 0; n < N; n++) {
-		// Обмен краевыми узлами
-		MPI_Send(&u1[left_index], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-		MPI_Recv(&u1[left_index - 1], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		MPI_Send(&u1[right_index - 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-		MPI_Recv(&u1[right_index], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		
-		for (m = left_index; m < right_index - 1; m++) {
+	for (n = 0; n < N; n++) {		
+		for (m = left_index; m <= right_index; m++) {
 			u1[m] = u0[m] + 0.3  * (u0[m-1] - 2.0 * u0[m] + u0[m+1]);
 		}
 		double *t = u0;
 		u0 = u1;
 		u1 = t;
+		
+		// Обмен краевыми узлами
+		if((rank > 0) && (rank < size - 1)) {
+			MPI_Send(u1 + left_index, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
+			MPI_Recv(u1 + left_index - 1, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Send(u1 + right_index + 1, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+			MPI_Recv(u1 + right_index, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		}
+		if(rank == 0) {
+			MPI_Send(u1 + right_index + 1, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
+			MPI_Recv(u1 + right_index, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		}
+		if(rank == size - 1) {
+			MPI_Send(u1 + left_index, 1, MPI_DOUBLE, size - 2, 0, MPI_COMM_WORLD);
+			MPI_Recv(u1 + left_index - 1, 1, MPI_DOUBLE, size - 2, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		}
 	}
 
-	//Обновление данных со всех процессов после последней итерации цикла
+	/*//Обновление данных со всех процессов после последней итерации цикла
 	if((rank != 0) && (rank != size - 1)) {
 		MPI_Send(&u1[left_index], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 		MPI_Recv(&u1[left_index - 1], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		MPI_Send(&u1[right_index - 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&u1[right_index + 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 		MPI_Recv(&u1[right_index], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 	if(rank == 0) {
-		MPI_Send(&u1[right_index - 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&u1[right_index + 1], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 		MPI_Recv(&u1[right_index], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 	if(rank == size - 1) {
 		MPI_Send(&u1[left_index], 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 		MPI_Recv(&u1[left_index - 1], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	}
+	}*/
+
+	//Рассчитываем время выполнения нашей программы
+    t = MPI_Wtime() - t;
 	
 	// Вывод на экран
-	for (m = 0; m < M; m++) {
-		printf("%lf %lf\n", m * h, u1[m]);
+	if(rank == 0) {
+		for (m = 0; m < M; m++) {
+			printf("%lf %lf\n", m * h, u1[m]);
+		}
 	}
 	
     //Освобождение памяти
