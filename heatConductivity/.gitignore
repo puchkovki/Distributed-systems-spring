@@ -4,3 +4,6 @@ divide.cpp
 test
 2.txt 
 3.txt
+*.o
+main_corrected.cpp
+task2
