@@ -23,41 +23,46 @@ int main(int argc, char **argv)
 	// Считываем время, когда хотим узнать распределение температуры
 	double Time = atof(argv[1]);
 	if (Time < 0) {
-		printf("Sorry, timemachine hasn't been invented yet!");
-		return EXIT_FAILURE;
+		if(rank == 0){
+			printf("Sorry, timemachine hasn't been invented yet!");
+			return EXIT_FAILURE;
+		}
 	}
 
     // Число разбиений по координате
 	int M = atoi(argv[2]);
 	if (M < 2) {
-		printf("Invalid values!\n");
-		return EXIT_FAILURE;
-	} else if(M < size) {
+		// Метод не сходится
+		if(rank == 0){
+			printf("Invalid values!\n");
+			return EXIT_FAILURE;
+		}
+	} else if(M < size) { // Если мелкость разбиения координаты настолько мала, 
+	// что не будут использованы все процессы
 		if(rank == 0){
 			printf("Required number of processes is unreasonable compared to coordinate partition!\n");
 			return EXIT_FAILURE;
 		}
 	}
 
-    //Шаг по координате
+    // Шаг по координате
 	double h = Length / M;
-
-    //Шаг по времени (число Куранта)
+    // Шаг по времени (число Куранта)
 	double tau = 0.3 * h * h;
-    //Число разбиений по времени
+    // Число разбиений по времени
 	int N = Time / tau;
 
-    //Массивы температуры для момента времени n и n + 1 соответственно
+    // Массивы температуры для момента времени n и n + 1 соответственно
 	double *u0 = (double*) malloc(sizeof(double) * M);
 	double *u1 = (double*) malloc(sizeof(double) * M);
 
-    //Счетчики для циклов по времени и координате
+    // Счетчики для циклов по времени и координате
 	size_t m, n;
 
-	//Начинаем отсчет времени
+	// Запуск отсчета времени
 	double time = MPI_Wtime();
 	
-	// Задаем начальные условия (f(x) = 0 )
+	// Начальные условия (f(x) = 0 )
 	for (m = 0; m < M; m++) 
     {
 		u0[m] = u1[m] = 0.0;
@@ -67,12 +72,15 @@ int main(int argc, char **argv)
 	u0[0] = u1[0] = Temperature_1;
 	u0[M - 1] = u1[M - 1] = Temperature_2;
 	
-	// Определяем левые узлы каждого процесса
+	// Массив индексов передаваемых точек
 	size_t *left_index = (size_t*) malloc(sizeof(size_t) * size + 1);
 	left_index[0] = 1;
+	// Чтобы избежать костылей при передаче массивов 0-ому процессу,
+	// определяю правый конец последнего массива
 	left_index[size] = M - 1;
+	// Итеративно определяю левые концы отрезков, передаваемые каждому процессу
+	// Правый конец i-го процесса = левому концу (i + 1)-го
 	for(int i = 1; i < size; i++) {
-		// +- равномерное распредление узлов
 		left_index[i] = left_index[i - 1] + (M / size) + ((i - 1) < ((M % size) - 2));
 	}
 
@@ -88,9 +96,11 @@ int main(int argc, char **argv)
 			MPI_Recv(u1 + left_index[rank + 1], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 
+		// Явный метод
 		for (m = left_index[rank]; m < left_index[rank + 1]; m++) {
 			u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
 		}
+		// Обновление результатов
 		double *t = u0;
 		u0 = u1;
 		u1 = t;
@@ -107,7 +117,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	//Рассчитываем время выполнения нашей программы
+	// Рассчитываем время работы программы
 	time = MPI_Wtime() - time;
 	
 	// Вывод на экран
