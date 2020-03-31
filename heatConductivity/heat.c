@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 			printf("Invalid values!\n");
 			return EXIT_FAILURE;
 		}
-	} else if(M < size) { // Если мелкость разбиения координаты настолько мала, 
+	} else if(M <= size) { // Если мелкость разбиения координаты настолько мала, 
 	// что не будут использованы все процессы
 		if(rank == 0){
 			printf("Required number of processes is unreasonable compared to coordinate partition!\n");
@@ -88,12 +88,12 @@ int main(int argc, char **argv)
 	for (n = 0; n < N; n++) {
 		// Обмен краевыми узлами
 		if(rank != 0) {
-			MPI_Send(u1 + left_index[rank], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
-			MPI_Recv(u1 + left_index[rank] - 1, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Send(u0 + left_index[rank], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
+			MPI_Recv(u0 + left_index[rank] - 1, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		if(rank != size - 1) {
-			MPI_Send(u1 + left_index[rank + 1] - 1, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
-			MPI_Recv(u1 + left_index[rank + 1], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Send(u0 + left_index[rank + 1] - 1, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+			MPI_Recv(u0 + left_index[rank + 1], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 
 		// Явный метод
