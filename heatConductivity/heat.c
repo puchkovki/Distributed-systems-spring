@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 	size_t m, n;
 
 	//Начинаем отсчет времени
-	double t = MPI_Wtime();
+	double time = MPI_Wtime();
 	
 	// Задаем начальные условия (f(x) = 0 )
 	for (m = 0; m < M; m++) 
@@ -108,13 +108,14 @@ int main(int argc, char **argv)
 	}
 
 	//Рассчитываем время выполнения нашей программы
-	t = MPI_Wtime() - t;
+	time = MPI_Wtime() - time;
 	
 	// Вывод на экран
 	if(rank == 0) {
-		for (m = 0; m < M; m++) {
+		/*for (m = 0; m < M; m++) {
 			printf("%lf %lf\n", m * h, u1[m]);
-		}
+		}*/
+		printf("%d %lf\n", size, time);
 	}
 	
     //Освобождение памяти
