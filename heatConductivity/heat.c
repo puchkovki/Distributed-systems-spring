@@ -24,12 +24,19 @@ int main(int argc, char **argv)
 	double Time = atof(argv[1]);
 	if (Time < 0) {
 		printf("Sorry, timemachine hasn't been invented yet!");
+		return EXIT_FAILURE;
 	}
 
     // Число разбиений по координате
 	int M = atoi(argv[2]);
 	if (M < 2) {
 		printf("Invalid values!\n");
+		return EXIT_FAILURE;
+	} else if(M < size) {
+		if(rank == 0){
+			printf("Required number of processes is unreasonable compared to coordinate partition!\n");
+			return EXIT_FAILURE;
+		}
 	}
 
     //Шаг по координате
@@ -60,32 +67,29 @@ int main(int argc, char **argv)
 	u0[0] = u1[0] = Temperature_1;
 	u0[M - 1] = u1[M - 1] = Temperature_2;
 	
-	// Определяем индексы массива для каждого процесса
-    size_t left_index = (rank != 0) ? (rank * (M / size)/* + ((rank < M % size) ? rank : (M % size))*/) : 1;
-	size_t right_index = (rank != size - 1) ? ((rank + 1) * (M / size) /*+ (rank < M % size)*/) : M - 1;
+	// Определяем левые узлы каждого процесса
+	size_t *left_index = (size_t*) malloc(sizeof(size_t) * size + 1);
+	left_index[0] = 1;
+	left_index[size] = M - 1;
+	for(int i = 1; i < size; i++) {
+		// +- равномерное распредление узлов
+		left_index[i] = left_index[i - 1] + (M / size) + ((i - 1) < ((M % size) - 2));
+	}
 
-	//printf("rank = %d left_index = %d right_index = %d\n", rank, left_index, right_index);
-
-	// Цикл по времени
+	 // Цикл по времени
 	for (n = 0; n < N; n++) {
-		if(size > 1) {
-			// Обмен краевыми узлами
-			if(rank != 0) {
-				MPI_Send(u1 + left_index, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
-				MPI_Recv(u1 + left_index - 1, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			}
-			if(rank != size - 1) {
-				MPI_Send(u1 + right_index - 1, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
-				MPI_Recv(u1 + right_index, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			}
+		// Обмен краевыми узлами
+		if(rank != 0) {
+			MPI_Send(u1 + left_index[rank], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
+			MPI_Recv(u1 + left_index[rank] - 1, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		}
+		if(rank != size - 1) {
+			MPI_Send(u1 + left_index[rank + 1] - 1, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+			MPI_Recv(u1 + left_index[rank + 1], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 
-		for (m = left_index; m < right_index; m++) {
+		for (m = left_index[rank]; m < left_index[rank + 1]; m++) {
 			u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
-			/*if (rank == 0) {
-				printf("u1[%d] = u0[%d] + 0.3  * (u0[%d] - 2.0 * u0[%d] + u0[%d])\n", m, m, m - 1, m,m + 1);
-				printf("%lf = %lf + 0.3  * (%lf - 2.0 * %lf + %lf)\n", u1[m], u0[m], u0[m - 1], u0[m], u0[m + 1]);
-			}*/
 		}
 		double *t = u0;
 		u0 = u1;
@@ -96,18 +100,15 @@ int main(int argc, char **argv)
 	if(size > 1) {
 		if(rank == 0) {
 			for(int i = 1; i < size; i++) {
-				// Обращаем внимание, что в случае неравноценного деления последний отрезок отсылает больше остальных
-				int message = (i == size - 1) ? (M - 1 - i * (M / size)) : (M / size);
-
-				MPI_Recv(u1 + i * (M / size), message, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(u1 + left_index[i], left_index[i + 1] - left_index[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			}
 		} else {
-			MPI_Send(u1 + left_index, right_index - left_index, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+			MPI_Send(u1 + left_index[rank], left_index[rank + 1] - left_index[rank], MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 		}
 	}
 
 	//Рассчитываем время выполнения нашей программы
-    t = MPI_Wtime() - t;
+	t = MPI_Wtime() - t;
 	
 	// Вывод на экран
 	if(rank == 0) {
@@ -121,5 +122,5 @@ int main(int argc, char **argv)
 	free(u1);
 
     MPI_Finalize();
-	return 0;
+	return EXIT_SUCCESS;
 }
