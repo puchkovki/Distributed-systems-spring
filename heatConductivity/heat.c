@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	// Считываем время, когда хотим узнать распределение температуры
+	// Считываем время, когда хотим узнать распределение температуры в стержне
 	double Time = atof(argv[1]);
 	if (Time < 0) {
 		if(rank == 0){
@@ -32,13 +32,14 @@ int main(int argc, char **argv)
     // Число разбиений по координате
 	int M = atoi(argv[2]);
 	if (M < 2) {
-		// Метод не сходится
+		// Иначе метод не сходится
 		if(rank == 0){
 			printf("Invalid values!\n");
 			return EXIT_FAILURE;
 		}
-	} else if(M <= size) { // Если мелкость разбиения координаты настолько мала, 
-	// что не будут использованы все процессы
+	} else if(M <= size) {
+		// Если мелкость разбиения координаты настолько мала, 
+		// что не будут использованы все процессы
 		if(rank == 0){
 			printf("Required number of processes is unreasonable compared to coordinate partition!\n");
 			return EXIT_FAILURE;
