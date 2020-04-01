@@ -5,6 +5,6 @@ mpicc -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion
 -fno-sanitize-recover=all -fstack-protector -o $FULLDIR/test $FULLDIR/graph.c -lm || exit 1
 for ((i = 1; i <= 28; ++i))
 do
-mpirun -np $i $FULLDIR/test $1 $2 >> 3.txt
+mpirun -np $i $FULLDIR/test $1 $2 >> res/data.txt
 done
 exit $?
