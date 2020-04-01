@@ -1,12 +1,8 @@
 # игнорируем вспомогатльные файлы
-divide.cpp
 # не обрабатываем файлы объектники
 test
-2.txt 
-3.txt
-*.o
-main_corrected.cpp
-task2
+1.png
+.vscode
 #scp -P 50506 solution.c puchkovki@remote.vdi.mipt.ru:~
 #ssh -p 50506 puchkovki@remote.vdi.mipt.ru
 #ssh s77403@head.vdi.mipt.ru
