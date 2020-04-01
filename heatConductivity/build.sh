@@ -8,3 +8,4 @@ do
 mpirun -np $i $FULLDIR/test $1 $2 >> heat.txt
 done
 exit $?
+# Для нормальных результатов следует брать значения порядка T = 10 M = 10000
