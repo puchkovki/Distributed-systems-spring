@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 	if (Time < 0) {
 		if(rank == 0){
 			printf("Sorry, timemachine hasn't been invented yet!");
+			MPI_Finalize();
 			return EXIT_FAILURE;
 		}
 	}
@@ -35,6 +36,7 @@ int main(int argc, char **argv)
 		// Иначе метод не сходится
 		if(rank == 0){
 			printf("Invalid values!\n");
+			MPI_Finalize();
 			return EXIT_FAILURE;
 		}
 	} else if(M <= size) {
@@ -42,6 +44,7 @@ int main(int argc, char **argv)
 		// что не будут использованы все процессы
 		if(rank == 0){
 			printf("Required number of processes is unreasonable compared to coordinate partition!\n");
+			MPI_Finalize();
 			return EXIT_FAILURE;
 		}
 	}
@@ -126,7 +129,7 @@ int main(int argc, char **argv)
 		/*for (m = 0; m < M; m++) {
 			printf("%lf %lf\n", m * h, u1[m]);
 		}*/
-		printf("%d %lf\n", size, time);
+		//printf("%d %lf\n", size, time);
 	}
 	
     //Освобождение памяти
