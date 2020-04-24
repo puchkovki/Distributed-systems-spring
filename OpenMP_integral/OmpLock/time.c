@@ -73,8 +73,10 @@ int main(int argc, char **argv) {
             omp_init_lock(&lock);
             // Блокируем замок для последующей записи        
             omp_set_lock(&lock);
+
             result += integral;
             averaged_time += (omp_get_wtime() - start); /// CLOCKS_PER_SEC;
+
             // Разблокируем замок
             omp_unset_lock(&lock);
             omp_destroy_lock(&lock);
@@ -83,7 +85,7 @@ int main(int argc, char **argv) {
     //result /= numexp;
 
     // Вывод кол-ва процессов, используемого программой, и усредненное время работы
-    printf("%ld %d %ld %lf ticks, %lf\n", N, size, numexp, averaged_time / numexp, result);
+    printf(" %d %lf\n", size, averaged_time / numexp);
 
 	return EXIT_SUCCESS;
 }

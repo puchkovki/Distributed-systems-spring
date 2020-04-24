@@ -27,23 +27,22 @@ double Integral(size_t left_index, size_t right_index, double h) {
     return I * h;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     // Количество шагов
-    size_t N;
+    size_t N = 1000000;
     // Запрошенное кол-во процессов
-    int size;
-    
-    if (argc > 2)
-	{
+    int size = 1;
+    // Количество последовательных выполнений программы для получения среднего времени выполнения
+    size_t numexp = 1;
+
+    if (argc > 1) {
         N = atoll(argv[1]);
-		if (argc > 3) {
-            size = atoll(argv[2]);
-        } else {
-            size = 1;
+		if (argc > 2) {
+            size = atoi(argv[2]);
+            if(argc > 3) {
+                numexp = atoll(argv[3]);
+            }
         }
-	} else {
-        N = 1000000;
     }
 
     // Задаем границы интегрирования
@@ -52,27 +51,31 @@ int main(int argc, char **argv)
     double h = (b - a) / N;
     double result = 0.0;
 
-    omp_set_num_threads(size);
-#pragma omp parallel
-{
-    // Устанавливаем ранг процесса
-	int rank = omp_get_thread_num();
-    
-    // Передаем каждому процессу "свои" индексы интегрирования
-    size_t left_index = rank * (N / size);
-    size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
+    double averaged_time = 0;
+    for(size_t i = 0; i < numexp; i++) {
+        omp_set_num_threads(size);
+        #pragma omp parallel
+        {
+            // Устанавливаем ранг процесса
+            int rank = omp_get_thread_num();
+            
+            // Передаем каждому процессу "свои" индексы интегрирования
+            size_t left_index = rank * (N / size);
+            size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
+            double integral = Integral(left_index, right_index, h);
+            omp_lock_t lock;
+            omp_init_lock(&lock);
+            // Определяем интеграл на заданном интервале
+            omp_set_lock(&lock);
+            result += integral;
+            omp_unset_lock(&lock);
 
-    omp_lock_t lock;
-    omp_init_lock(&lock);
-    // Определяем интеграл на заданном интервале
-    omp_set_lock(&lock);
-    result += Integral(left_index, right_index, h);
-    omp_unset_lock(&lock);
+            omp_destroy_lock(&lock);
+        }
+    }
 
-    omp_destroy_lock(&lock);
-}
     // Вывод кол-ва процессов, используемого программой, и значение интеграла
-    printf("%d %lf\n", size, result);
+    printf("%d %lf\n", size, result / numexp);
 
 	return EXIT_SUCCESS;
 }
