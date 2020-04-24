@@ -63,13 +63,15 @@ int main(int argc, char **argv) {
             size_t left_index = rank * (N / size);
             size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
             double integral = Integral(left_index, right_index, h);
+
             omp_lock_t lock;
             omp_init_lock(&lock);
+
             // Определяем интеграл на заданном интервале
             omp_set_lock(&lock);
             result += integral;
             omp_unset_lock(&lock);
-
+            
             omp_destroy_lock(&lock);
         }
     }

@@ -8,8 +8,8 @@ int main(void) {
     FILE* data = fopen("res/data.txt","rt");
     FILE* acceleration = fopen("res/acceleration.txt","w+");
     FILE* efficiency = fopen("res/efficiency.txt","w+");
-    if((!data) || (!acceleration)) {
-        printf("Error open data.txt\n");
+    if((!data) || (!acceleration) || (!efficiency)) {
+        printf("Error open txt file\n");
         return EXIT_FAILURE;
     } else {
         while(!feof(data)) {
