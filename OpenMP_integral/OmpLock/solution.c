@@ -50,10 +50,14 @@ int main(int argc, char **argv) {
     // Задаем мелкость разбиения отрезка
     double h = (b - a) / N;
     double result = 0.0;
+    
+    omp_lock_t lock;
+    omp_init_lock(&lock);
 
-    double averaged_time = 0;
     for(size_t i = 0; i < numexp; i++) {
+        // Устанавливаем требуемое кол-во процессов
         omp_set_num_threads(size);
+
         #pragma omp parallel
         {
             // Устанавливаем ранг процесса
@@ -64,17 +68,13 @@ int main(int argc, char **argv) {
             size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
             double integral = Integral(left_index, right_index, h);
 
-            omp_lock_t lock;
-            omp_init_lock(&lock);
-
             // Определяем интеграл на заданном интервале
             omp_set_lock(&lock);
             result += integral;
             omp_unset_lock(&lock);
-            
-            omp_destroy_lock(&lock);
         }
     }
+    omp_destroy_lock(&lock);
 
     // Вывод кол-ва процессов, используемого программой, и значение интеграла
     printf("%d %lf\n", size, result / numexp);

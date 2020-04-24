@@ -48,9 +48,12 @@ int main(int argc, char **argv) {
     // Задаем мелкость разбиения отрезка
     double h = (b - a) / N;
     double result = 0.0;
-
     // Среднее время выполнения
     double averaged_time = 0;
+
+    omp_lock_t lock;
+    omp_init_lock(&lock);
+
     for(size_t i = 0; i < numexp; i++) {
         // Начинаем отсчет времени
         double start = omp_get_wtime();
@@ -65,24 +68,16 @@ int main(int argc, char **argv) {
             // Передаем каждому процессу "свои" индексы интегрирования
             size_t left_index = rank * (N / size);
             size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
-            // Определяем интеграл на заданном интервале
             double integral = Integral(left_index, right_index, h);
 
-            // Инициализируем замок
-            omp_lock_t lock;
-            omp_init_lock(&lock);
-            // Блокируем замок для последующей записи        
+            // Определяем интеграл на заданном интервале
             omp_set_lock(&lock);
-
             result += integral;
-            averaged_time += (omp_get_wtime() - start); /// CLOCKS_PER_SEC;
-
-            // Разблокируем замок
+            averaged_time += (omp_get_wtime() - start);
             omp_unset_lock(&lock);
-            omp_destroy_lock(&lock);
-        }        
+        }   
     }
-    //result /= numexp;
+    omp_destroy_lock(&lock);
 
     // Вывод кол-ва процессов, используемого программой, и усредненное время работы
     printf(" %d %lf\n", size, averaged_time / numexp);
