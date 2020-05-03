@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	for (n = 0; n < N; n++) {	 // Цикл по времени
 #pragma omp parallel shared(u0, u1)
 {	
-#pragma omp barrier	
+//#pragma omp barrier	
 		// Явный метод
 #pragma omp for
 		for (m = 1; m < M - 1; m++) {
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 		double *t = u0;
 		u0 = u1;
 		u1 = t;
-#pragma omp barrier
+//#pragma omp barrier
 }
 	}
 
