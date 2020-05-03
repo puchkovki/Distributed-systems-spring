@@ -58,8 +58,6 @@ int main(int argc, char **argv)
     // Счетчики для циклов по времени и координате
 	size_t m, n;
 
-	// Начинаем отсчет времени
-    double start = omp_get_wtime();
 	
 	// Начальные условия (f(x) = 0 )
 	for (m = 0; m < M; m++) 
@@ -71,33 +69,33 @@ int main(int argc, char **argv)
 	u0[0] = u1[0] = Temperature_1;
 	u0[M - 1] = u1[M - 1] = Temperature_2;
 
+	double time = 0.0;
+
 	omp_set_num_threads(size);
+	for(size_t j = 0; j < numexp; j++) {
+		// Начинаем отсчет времени
+		double start = omp_get_wtime();
 
-	for (n = 0; n < N; n++) {	 // Цикл по времени
-#pragma omp parallel shared(u0, u1)
-{	
-//#pragma omp barrier	
-		// Явный метод
-#pragma omp for
-		for (m = 1; m < M - 1; m++) {
-			u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+		for (n = 0; n < N; n++) {	 // Цикл по времени
+			// Явный метод
+			#pragma omp parallel for
+				for (m = 1; m < M - 1; m++) {
+					u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+				}
+			// Обновление результатов
+			double *t = u0;
+			u0 = u1;
+			u1 = t;
 		}
-		// Обновление результатов
-		double *t = u0;
-		u0 = u1;
-		u1 = t;
-//#pragma omp barrier
-}
+		// Рассчитываем время работы программы
+		time += omp_get_wtime() - start;
 	}
-
-	// Рассчитываем время работы программы
-	start = omp_get_wtime() - start;
 	
 	// Вывод на экран
-	for (m = 0; m < M; m++) {
+	/*for (m = 0; m < M; m++) {
 		printf("%lf %lf\n", m * h, u1[m]);
-	}
-	printf("\n %d %lf\n", size, start);
+	}*/
+	printf("\n %d %lf\n", size, time / numexp);
 	
     //Освобождение памяти
 	free(u0);
