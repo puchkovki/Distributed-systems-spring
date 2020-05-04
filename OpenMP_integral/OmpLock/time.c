@@ -51,14 +51,16 @@ int main(int argc, char **argv) {
     // Среднее время выполнения
     double averaged_time = 0;
 
+    // Создание замка
     omp_lock_t lock;
+    //Инициализация замка
     omp_init_lock(&lock);
 
     for(size_t i = 0; i < numexp; i++) {
         // Начинаем отсчет времени
         double start = omp_get_wtime();
 
-        // Устанавливаем требуемое кол-во процессов
+        // Задаем кол-во процессов для следующего распараллеливания
         omp_set_num_threads(size);
         #pragma omp parallel
         {
@@ -68,15 +70,20 @@ int main(int argc, char **argv) {
             // Передаем каждому процессу "свои" индексы интегрирования
             size_t left_index = rank * (N / size);
             size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
+            // Определяем интеграл на заданном интервале
             double integral = Integral(left_index, right_index, h);
 
-            // Определяем интеграл на заданном интервале
+            // Заблокировать замок
             omp_set_lock(&lock);
+            // Сбор значений со всех потоков
             result += integral;
-            averaged_time += (omp_get_wtime() - start);
+            // Разблокировать замок
             omp_unset_lock(&lock);
-        }   
+        }
+        // Суммирование времени работы 
+        averaged_time += (omp_get_wtime() - start);  
     }
+    // Удаление замка
     omp_destroy_lock(&lock);
 
     // Вывод кол-ва процессов, используемого программой, и усредненное время работы

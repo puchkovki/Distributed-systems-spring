@@ -71,9 +71,9 @@ int main(int argc, char **argv) {
             #pragma omp critical
             {
                 result += integral;
-                averaged_time += (omp_get_wtime() - start);
             }
-        }   
+        }
+        averaged_time += (omp_get_wtime() - start); 
     }
 
     // Вывод кол-ва процессов, используемого программой, и усредненное время работы

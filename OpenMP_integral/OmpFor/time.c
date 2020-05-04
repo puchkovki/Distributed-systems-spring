@@ -46,7 +46,10 @@ int main(int argc, char **argv) {
         double start = omp_get_wtime();
         result = (Func(0) + Func(N * h)) / 2;
 
+        // Задаем кол-во процессов для следующего распараллеливания
         omp_set_num_threads(size);
+        // Статическое распределение итераций с шагом в 10^4, правильное 
+        // суммирование всех параллельных вычислений
         #pragma omp parallel for schedule(static, 10000) reduction(+: result)
             for(size_t i = 1; i < N; i++) {
                 result += Func(i * h);

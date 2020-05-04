@@ -51,13 +51,15 @@ int main(int argc, char **argv) {
     double h = (b - a) / N;
     double result = 0.0;
     
+    // Создание замка
     omp_lock_t lock;
+    //Инициализация замка
     omp_init_lock(&lock);
 
     for(size_t i = 0; i < numexp; i++) {
         // Устанавливаем требуемое кол-во процессов
         omp_set_num_threads(size);
-
+        // Начало параллельной секции
         #pragma omp parallel
         {
             // Устанавливаем ранг процесса
@@ -66,14 +68,18 @@ int main(int argc, char **argv) {
             // Передаем каждому процессу "свои" индексы интегрирования
             size_t left_index = rank * (N / size);
             size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
+            // Определяем интеграл на заданном интервале
             double integral = Integral(left_index, right_index, h);
 
-            // Определяем интеграл на заданном интервале
+            // Заблокировать замок
             omp_set_lock(&lock);
+            // Сбор значений со всех потоков
             result += integral;
+            // Разблокировать замок
             omp_unset_lock(&lock);
         }
     }
+    // Удаление замка
     omp_destroy_lock(&lock);
 
     // Вывод кол-ва процессов, используемого программой, и значение интеграла
