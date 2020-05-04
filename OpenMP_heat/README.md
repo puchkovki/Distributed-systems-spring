@@ -33,7 +33,7 @@
  - `M` --- число разбиения координаты стержня;
  - `size` --- необходимое количество процессов.
 
-Запуск: `gcc -fnopenmp solution.c && ./a.out Time M size`
+Запуск: `gcc -fopenmp solution.c && ./a.out Time M size`
 
 Во всех реализациях исполняемый файл `time.c` вычисляет и выводит время работы 
 программы. Необходимые входные параметры:
@@ -44,7 +44,7 @@
 времени работы.
 
 
-Запуск: `gcc -fnopenmp time.c && ./a.out Time M size numexp`
+Запуск: `gcc -fopenmp time.c && ./a.out Time M size numexp`
 
 ## **Запуск**
 
