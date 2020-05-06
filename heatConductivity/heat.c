@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 		/*for (m = 0; m < M; m++) {
 			printf("%lf %lf\n", m * h, u1[m]);
 		}*/
-		//printf("%d %lf\n", size, time);
+		printf("%d %lf\n", size, time);
 	}
 	
     //Освобождение памяти
