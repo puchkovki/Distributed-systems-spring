@@ -3,7 +3,7 @@ echo "Compilation"
 FULLDIR=$(dirname "$0")
 mpicc -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wcast-qual \
 -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=undefined \
--fno-sanitize-recover=all -fstack-protector -o $FULLDIR/test $FULLDIR/heat.c -lm || exit 1
+-fno-sanitize-recover=all -fstack-protector -o $FULLDIR/test $FULLDIR/time.c -lm || exit 1
 
 echo "Making res directory if necessary"
 mkdir -p $FULLDIR/res
@@ -26,17 +26,17 @@ $FULLDIR/test
 
 echo "Plotting metrics"
 gnuplot <<< "set terminal png size 1024, 720; \
-             set xlabel 'Number of processes'; \
-             set ylabel 'Acceleration'; \
-             set xrange [1:28]; \
-             set output 'res/acceleration.png'; \
-             plot 'res/acceleration.txt' with lines; \
-             set terminal png size 1024, 720; \
-             set xlabel 'Number of processes'; \
-             set ylabel 'Efficiency'; \
-             set xrange [1:28]; \
-             set output 'res/efficiency.png'; \
-             plot 'res/efficiency.txt' with lines; "
+            set xlabel 'Number of processes'; \
+            set ylabel 'Acceleration'; \
+            set xrange [1:28]; \
+            set output 'res/acceleration.png'; \
+            plot 'res/acceleration.txt' with lines; \
+            set terminal png size 1024, 720; \
+            set xlabel 'Number of processes'; \
+            set ylabel 'Efficiency'; \
+            set xrange [1:28]; \
+            set output 'res/efficiency.png'; \
+            plot 'res/efficiency.txt' with lines; "
 echo "Plot image stored at res"
 exit $?
 # Для нормальных результатов следует брать значения порядка T =  0.000001 M = 50000

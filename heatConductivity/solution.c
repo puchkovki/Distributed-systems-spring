@@ -126,10 +126,9 @@ int main(int argc, char **argv)
 	
 	// Вывод на экран
 	if(rank == 0) {
-		/*for (m = 0; m < M; m++) {
+		for (m = 0; m < M; m++) {
 			printf("%lf %lf\n", m * h, u1[m]);
-		}*/
-		printf("%d %lf\n", size, time);
+		}
 	}
 	
     //Освобождение памяти
