@@ -67,20 +67,21 @@ int main(int argc, char **argv)
 
 	// Задаем кол-во процессов для следующего распараллеливания
 	omp_set_num_threads(size);
-	#pragma omp parallel
+	#pragma omp parallel private(n)
 	{
 		for (n = 0; n < N; n++) {	 // Цикл по времени
-			#pragma omp barrier // Явный метод
+			// Явный метод
 			#pragma omp for
-				for (m = 1; m < M - 1; m++) {
-					u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
-				}
-			#pragma omp barrier
-			// Обновление результатов
-			double *t = u0;
-			u0 = u1;
-			u1 = t;
-			//
+			for (m = 1; m < M - 1; m++) {
+				u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+			}
+			#pragma omp single
+			{
+				// Обновление результатов
+				double *t = u0;
+				u0 = u1;
+				u1 = t;
+			}
 		}
 	}
 	

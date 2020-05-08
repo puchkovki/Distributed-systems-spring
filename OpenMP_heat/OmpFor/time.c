@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 		// Начинаем отсчет времени
 		double start = omp_get_wtime();
 
-		 #pragma omp parallel private(n)
+		#pragma omp parallel private(n)
 		{
 			for (n = 0; n < N; n++) {	 // Цикл по времени
 				// Явный метод
