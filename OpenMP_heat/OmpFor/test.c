@@ -14,8 +14,6 @@ int main(int argc, char **argv)
 	size_t M = 10;
 	// Количество паралельных процессов
 	size_t size = 1;
-	// Количество последовательных выполнений программы для получения среднего времени выполнения
-    size_t numexp = 1;
 
 
 	if (argc > 1) {
@@ -41,9 +39,6 @@ int main(int argc, char **argv)
 					printf("Required number of processes is unreasonable compared to coordinate partition!\n");
 					return EXIT_FAILURE;
 				}
-				if (argc > 4) {
-					numexp = atoll(argv[3]);
-				}
             }
         }
     }
@@ -54,6 +49,10 @@ int main(int argc, char **argv)
 	double tau = 0.3 * h * h;
     // Число разбиений по времени
 	int N = Time / tau;
+    if (N < 1) {
+        printf("Cannot make a time loop");
+        return EXIT_FAILURE;
+    }
 
     // Массивы температуры для момента времени n и n + 1 соответственно
 	double *u0 = (double*) malloc(sizeof(double) * M);
@@ -72,36 +71,33 @@ int main(int argc, char **argv)
 	u0[M - 1] = u1[M - 1] = Temperature_2;
 
 	double time = 0.0;
-
     // Задаем кол-во процессов для следующего распараллеливания
 	omp_set_num_threads(size);
-	for(size_t j = 0; j < numexp; j++) {
-		// Начинаем отсчет времени
-		double start = omp_get_wtime();
+    
+	// Начинаем отсчет времени
+	double start = omp_get_wtime();
+    #pragma omp parallel private(n)
+    {
+        for (n = 0; n < N; n++) {	 // Цикл по времени
+            // Явный метод
+            #pragma omp for
+            for (m = 1; m < M - 1; m++) {
+                u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+            }
+            #pragma omp single
+            {
+                // Обновление результатов
+                double *t = u0;
+                u0 = u1;
+                u1 = t;
+            }
+        }
+    }
+    // Рассчитываем время работы программы
+    time += omp_get_wtime() - start;
 
-		 #pragma omp parallel private(n)
-		{
-			for (n = 0; n < N; n++) {	 // Цикл по времени
-				// Явный метод
-				#pragma omp for
-				for (m = 1; m < M - 1; m++) {
-					u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
-				}
-				#pragma omp single
-				{
-					// Обновление результатов
-					double *t = u0;
-					u0 = u1;
-					u1 = t;
-				}
-			}
-		}
-		// Рассчитываем время работы программы
-		time += omp_get_wtime() - start;
-	}
-	
-	printf("\n %d %lf\n", size, time / numexp);
-	
+	// Вывод на экран
+	printf("\n %d %lf\n", size, time);
     //Освобождение памяти
 	free(u0);
 	free(u1);
