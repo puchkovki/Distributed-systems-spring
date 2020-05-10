@@ -5,20 +5,14 @@
 Решить одномерное уравнение теплопроводности при заданных граничных условиях и
 начальном распределении температуры ![equation](https://latex.codecogs.com/gif.latex?f(x)). 
 
-![equation](https://latex.codecogs.com/gif.latex?\frac{\partial&space;u}
-{\partial&space;t}&space;=&space;\frac{\partial^2&space;u}
-{\partial&space;x^2},&space;x&space;\in[0,&space;1],&space;
-u(x,&space;0)&space;=&space;f(x),&space;u(0,&space;t)&space;
-=&space;u_1,&space;u(1,&space;t)&space;=&space;u_{\text{r}})
+![equation](https://latex.codecogs.com/gif.latex?\frac{\partial&space;u}{\partial&space;t}&space;=&space;\frac{\partial^2&space;u}{\partial&space;x^2},&space;x&space;\in[0,&space;1],&space;u(x,&space;0)&space;=&space;f(x),&space;u(0,&space;t)&space;=&space;u_1,&space;u(1,&space;t)&space;=&space;u_{\text{r}})
 
 
 Представим, что значально температура в стержне длины `L` была распределена по
 закону ![equation](https://latex.codecogs.com/gif.latex?f(x)). Далее к его краям
 приложили два нагретых бруска с температурами `Temperature_1` и `Temperature_2`
 соответственно. По закону теплопроводности Фурье начал происходить теплообмен
-стержня с брусками. В задаче используется явный схема: ![equation](https://latex.codecogs.com/gif.latex?
-u_{m}^{n&space;&plus;&space;1}&space;=&space;u_m^n&space;&plus;&space;\frac{\tau}
-{h^2}(u_{m&space;-&space;1}^n&space;-&space;2u_m^n&space;&plus;&space;u_{m&space;&plus;&space;1}^{n})).
+стержня с брусками. В задаче используется явный схема: ![equation](https://latex.codecogs.com/gif.latex?u_{m}^{n&space;&plus;&space;1}&space;=&space;u_m^n&space;&plus;&space;\frac{\tau}{h^2}(u_{m&space;-&space;1}^n&space;-&space;2u_m^n&space;&plus;&space;u_{m&space;&plus;&space;1}^{n})).
 
 Найти ![equation](https://latex.codecogs.com/gif.latex?u(x,&space;T)).
 
@@ -55,8 +49,7 @@ u_{m}^{n&space;&plus;&space;1}&space;=&space;u_m^n&space;&plus;&space;\frac{\tau
 2. `Time < 0` смоделировать нельзя.
 3. При `M < 2` метод не сходится.
 4. При `M < size` задача становится нелогичной.
-5. Шаг по времени ![equation](https://latex.codecogs.com/gif.latex?\tau&space;
-=&space;0,3&space;\text{(число&space;Куранта)}&space;\cdot&space;h) --- шаг по времени.
+5. Шаг по времени ![equation](https://latex.codecogs.com/gif.latex?\tau&space;=&space;0,3&space;\text{(число&space;Куранта)}&space;\cdot&space;h) --- шаг по времени.
 
 Исполняемый файл `solution.c` вычисляет и выводит распределение температуры в 
 стержне в указанный момент времени. Необходимые входные параметры:
