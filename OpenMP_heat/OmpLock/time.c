@@ -56,8 +56,8 @@ int main(int argc, char **argv)
 	int N = Time / tau;
 
     // Массивы температуры для момента времени n и n + 1 соответственно
-	double *u0 = (double*) malloc(sizeof(double) * M);
-	double *u1 = (double*) malloc(sizeof(double) * M);
+	double* u0 = (double*) malloc(sizeof(double) * M);
+	double* u1 = (double*) malloc(sizeof(double) * M);
 
     // Счетчики для циклов по времени и координате
 	size_t m, n;
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 	u0[M - 1] = u1[M - 1] = Temperature_2;
 
     // Массив индексов передаваемых точек
-	size_t *left_index = (size_t*) malloc(sizeof(size_t) * size + 1);
+	size_t* left_index = (size_t*) malloc(sizeof(size_t) * (size + 1));
 	left_index[0] = 1;
 	// Чтобы избежать костылей при передаче массивов 0-ому процессу,
 	// определяю правый конец последнего массива
@@ -84,31 +84,89 @@ int main(int argc, char **argv)
 		left_index[i] = left_index[i - 1] + (M / size) + ((i - 1) < ((M % size) - 2));
 	}
 
+	
+    // Создание замка
+    omp_lock_t* lock = (omp_lock_t*) malloc(sizeof(omp_lock_t) * 2 * size);
+    //Инициализация замка
+	for (size_t i = 0; i < 2 * size; ++i) {
+    	omp_init_lock(&lock[i]);
+	}
+	
+	// Вспомогательная переменная, показывающая кол-во процессов, закончивших данную итерацию цикла
+	size_t epoc = 0;
+	
 	double time = 0.0;
-
 	// Задаем кол-во процессов для следующего распараллеливания
 	omp_set_num_threads(size);
 	for(size_t j = 0; j < numexp; j++) {
 		// Начинаем отсчет времени
 		double start = omp_get_wtime();
 
-		for (n = 0; n < N; n++) {	 // Цикл по времени
-			// Явный метод
-			#pragma omp parallel
-            {
-                int id = omp_get_thread_num();
-				for (m = left_index[id]; m < left_index[id + 1]; m++) {
-					u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+		#pragma omp parallel private(n, m)
+		{
+			size_t id = omp_get_thread_num();
+			for (n = 0; n < N; n++) {	 // Цикл по времени
+				// Обнуляем глобальную эпоху
+				#pragma omp single
+				{
+					epoc = 0;
 				}
-            }
-			
-			// Обновление результатов
-			double *t = u0;
-			u0 = u1;
-			u1 = t;
+
+				// Явная четырехточечная схема
+				for (m = left_index[id]; m < left_index[id + 1]; ++m) {
+					
+					if ((m == left_index[id]) && (id != 0)) {
+						// Запоминаем боковой узел
+						omp_set_lock(&lock[id - 1 + size]);
+						double left = u0[left_index[id] - 1];
+						omp_unset_lock(&lock[id - 1 + size]);
+
+						// Проводим защищенно вычисления
+						omp_set_lock(&lock[id]);
+						u1[m] = u0[m] + 0.3 * (left - 2.0 * u0[m] + u0[m + 1]);
+						omp_unset_lock(&lock[id]);
+					}
+					
+					if ((m == left_index[id + 1] - 1) && (id != size - 1)) {
+						// Запоминаем боковой узел
+						omp_set_lock(&lock[id + 1]);
+						double right = u0[left_index[id + 1]];
+						omp_unset_lock(&lock[id + 1]);
+
+						// Проводим защищенно вычисления
+						omp_set_lock(&lock[id + size]);
+						u1[m] = u0[m] + 0.3 * (u0[m - 1] - 2.0 * u0[m] + right);
+						omp_unset_lock(&lock[id + size]);
+					}
+
+					u1[m] = u0[m] + 0.3 * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+				}
+					
+				// Атомарно инкрементируем, показывая, что процесс закончил работу
+				#pragma omp atomic
+				epoc++;
+
+				#pragma omp single
+				{
+					// Не обновляем результат, пока не проработали все процессы
+					while (epoc < size) {
+						__asm volatile ("pause" ::: "memory");
+					}
+
+					// Обновление результатов
+					double *t = u0;
+					u0 = u1;
+					u1 = t;
+				}
+			}
 		}
+		
 		// Рассчитываем время работы программы
 		time += omp_get_wtime() - start;
+	}
+    // Удаление замка
+	for (size_t i = 0; i < 2 * size; ++i) {
+    	omp_destroy_lock(&lock[i]);
 	}
 	
 	printf("\n %d %lf\n", size, time / numexp);

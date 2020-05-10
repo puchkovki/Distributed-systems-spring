@@ -78,22 +78,81 @@ int main(int argc, char **argv)
 		left_index[i] = left_index[i - 1] + (M / size) + ((i - 1) < ((M % size) - 2));
 	}
 
+	// Создание замка
+    omp_lock_t* lock = (omp_lock_t*) malloc(sizeof(omp_lock_t) * 2 * size);
+    //Инициализация замка
+	for (size_t i = 0; i < 2 * size; ++i) {
+    	omp_init_lock(&lock[i]);
+	}	
+
+	// Вспомогательная переменная, показывающая кол-во процессов, закончивших данную итерацию цикла
+	size_t epoc = 0;
+
 	// Задаем кол-во процессов для следующего распараллеливания
 	omp_set_num_threads(size);
-	for (n = 0; n < N; n++) {	 // Цикл по времени
-		// Явный метод
-		#pragma omp parallel
-        {
-            int id = omp_get_thread_num();
-			for (m = left_index[id]; m < left_index[id + 1]; m++) {
-				u1[m] = u0[m] + 0.3  * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+	#pragma omp parallel private(n, m)
+	{
+		size_t id = omp_get_thread_num();
+		// Цикл по времени
+		for (n = 0; n < N; n++) {
+			// Обнуляем глобальную эпоху
+			#pragma omp single
+			{
+				epoc = 0;
 			}
-        }
 
-		// Обновление результатов
-		double *t = u0;
-		u0 = u1;
-		u1 = t;
+			// Явная четырехточечная схема
+			for (m = left_index[id]; m < left_index[id + 1]; ++m) {
+				
+				if ((m == left_index[id]) && (id != 0)) {
+					// Запоминаем боковой узел
+					omp_set_lock(&lock[id - 1 + size]);
+					double left = u0[left_index[id] - 1];
+					omp_unset_lock(&lock[id - 1 + size]);
+
+					// Проводим защищенно вычисления
+					omp_set_lock(&lock[id]);
+					u1[m] = u0[m] + 0.3 * (left - 2.0 * u0[m] + u0[m + 1]);
+					omp_unset_lock(&lock[id]);
+				}
+				
+				if ((m == left_index[id + 1] - 1) && (id != size - 1)) {
+					// Запоминаем боковой узел
+					omp_set_lock(&lock[id + 1]);
+					double right = u0[left_index[id + 1]];
+					omp_unset_lock(&lock[id + 1]);
+
+					// Проводим защищенно вычисления
+					omp_set_lock(&lock[id + size]);
+					u1[m] = u0[m] + 0.3 * (u0[m - 1] - 2.0 * u0[m] + right);
+					omp_unset_lock(&lock[id + size]);
+				}
+
+				u1[m] = u0[m] + 0.3 * (u0[m - 1] - 2.0 * u0[m] + u0[m + 1]);
+			}
+				
+			// Атомарно инкрементируем, показывая, что процесс закончил работу
+			#pragma omp atomic
+			epoc++;
+
+			#pragma omp single
+			{
+				// Не обновляем результат, пока не проработали все процессы
+				while (epoc < size) {
+					__asm volatile ("pause" ::: "memory");
+				}
+
+				// Обновление результатов
+				double *t = u0;
+				u0 = u1;
+				u1 = t;
+			}
+		}
+	}
+		
+    // Удаление замка
+	for (size_t i = 0; i < 2 * size; ++i) {
+    	omp_destroy_lock(&lock[i]);
 	}
 	
 	// Вывод на экран
@@ -101,7 +160,7 @@ int main(int argc, char **argv)
 		printf("%lf %lf\n", m * h, u1[m]);
 	}
 	
-    //Освобождение памяти
+    // Освобождение памяти
 	free(u0);
 	free(u1);
 
