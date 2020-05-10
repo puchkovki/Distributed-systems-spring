@@ -4,16 +4,8 @@
 
 Решить одномерное уравнение теплопроводности при заданных граничных условиях и
 начальном распределении температуры `f(x)`. 
-```
-                     2                                           
-partial u     partial  u                                         
----------  =  ----------, x in[0, 1],u(x, 0)  =  f(x), u(0, t)  =
-partial t              2                                         
-              partial x                                          
-                                                                 
-                     u , u(1, t)  =  u                           
-                      1               text{r}                    
-```
+
+![equation](https://latex.codecogs.com/gif.latex?\frac{\partial&space;u}{\partial&space;t}&space;=&space;\frac{\partial^2&space;u}{\partial&space;x^2},&space;x&space;\in[0,&space;1],&space;u(x,&space;0)&space;=&space;f(x),&space;u(0,&space;t)&space;=&space;u_1,&space;u(1,&space;t)&space;=&space;u_{\text{r}})
 
 
 Представим, что значально температура в стержне длины `L` была распределена по
