@@ -92,12 +92,16 @@ int main(int argc, char **argv)
 	for (n = 0; n < N; n++) {
 		// Обмен краевыми узлами
 		if(rank != 0) {
-			MPI_Send(u0 + left_index[rank], 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
-			MPI_Recv(u0 + left_index[rank] - 1, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Send(u0 + left_index[rank], 1, MPI_DOUBLE, rank - 1, 0,
+			MPI_COMM_WORLD);
+			MPI_Recv(u0 + left_index[rank] - 1, 1, MPI_DOUBLE, rank - 1, 0,
+			MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		if(rank != size - 1) {
-			MPI_Send(u0 + left_index[rank + 1] - 1, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
-			MPI_Recv(u0 + left_index[rank + 1], 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Send(u0 + left_index[rank + 1] - 1, 1, MPI_DOUBLE, rank + 1, 0,
+			MPI_COMM_WORLD);
+			MPI_Recv(u0 + left_index[rank + 1], 1, MPI_DOUBLE, rank + 1, 0,
+			MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 
 		// Явный метод
@@ -114,10 +118,12 @@ int main(int argc, char **argv)
 	if(size > 1) {
 		if(rank == 0) {
 			for(int i = 1; i < size; i++) {
-				MPI_Recv(u1 + left_index[i], left_index[i + 1] - left_index[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(u1 + left_index[i], left_index[i + 1] - left_index[i],
+				MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			}
 		} else {
-			MPI_Send(u1 + left_index[rank], left_index[rank + 1] - left_index[rank], MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+			MPI_Send(u1 + left_index[rank], left_index[rank + 1] -
+			left_index[rank], MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 		}
 	}
 
