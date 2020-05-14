@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     double a = 0, b = 2;
     //Задаем мелкость разбиения отрезка
     double h = (b - a) / N;
-        
+
     //Передаем каждому процессу "свои" индексы интегрирования
     size_t left_index = rank * (N / size);
     size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
