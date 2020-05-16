@@ -3,5 +3,5 @@ Eng_RM.md
 #1-st seminar.c
 test
 *.o
-*.vscode
+.vscode
 *.out
