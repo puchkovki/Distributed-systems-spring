@@ -1,9 +1,9 @@
 #!/bin/bash
 echo "Compilation"
 FULLDIR=$(dirname "$0")
-gcc -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wcast-qual \
+mpic++ -Wall -Wextra -pedantic -O0 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wcast-qual \
 -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=undefined \
--fno-sanitize-recover=all -fstack-protector -fopenmp -o $FULLDIR/test $FULLDIR/time.c -lm || exit 1
+-fno-sanitize-recover=all -fstack-protector -std=c++17 -o $FULLDIR/test $FULLDIR/solution.cpp -lm || exit 1
 
 echo "Making res directory if necessary"
 mkdir -p $FULLDIR/res
@@ -11,10 +11,9 @@ mkdir -p $FULLDIR/res
 echo "Cleaning up res directory"
 echo -n > $FULLDIR/res/data.txt
 
-echo "Making data file with times"
-for ((i = 1; i < 5; ++i))
+for ((i = 1; i <= 4; ++i))
 do
-    $FULLDIR/test $1 $2 $i $3>> $FULLDIR/res/data.txt
+mpirun --hostfile hostfile -np $i $FULLDIR/test $1 $2 >> res/data.txt
 done
 
 echo "Compilation"
