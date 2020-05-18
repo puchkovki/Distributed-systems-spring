@@ -202,9 +202,10 @@ int main(int argc, char** argv) {
 
     //Начинаем отсчет времени
     double start = MPI_Wtime();
+    for (int k = 0; k < 100000; k++) {
     // Вычисление суммы
-    summarize(first_number, second_number, left_index, right_index, overflow, rank, size, overflowDepth, N, lastOverflowSend, lastOverflowRecv);
-
+        summarize(first_number, second_number, left_index, right_index, overflow, rank, size, overflowDepth, N, lastOverflowSend, lastOverflowRecv);
+    }
     double end = MPI_Wtime() - start;
     // Сбор данных со всех процессов после последней итерации цикла
 	if(size > 1) {
