@@ -1,9 +1,10 @@
 #!/bin/bash
 echo "Compilation"
 FULLDIR=$(dirname "$0")
-mpic++ -Wall -Wextra -pedantic -O0 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wcast-qual \
--Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=undefined \
--fno-sanitize-recover=all -fstack-protector -std=c++17 -o $FULLDIR/test $FULLDIR/solution.cpp -lm || exit 1
+mpic++ -Wall -Wextra -pedantic -O0 -Wshadow -Wformat=2 -Wfloat-equal \
+-Wconversion -Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC \
+-fsanitize=undefined -fno-sanitize-recover=all -fstack-protector -std=c++17 -o \
+$FULLDIR/test $FULLDIR/solution.cpp -lm || exit 1
 
 echo "Making res directory if necessary"
 mkdir -p $FULLDIR/res

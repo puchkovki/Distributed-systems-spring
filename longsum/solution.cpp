@@ -39,68 +39,19 @@ void alignToCommonSize (Number& number, size_t& N) {
 }
 
 // Суммирование элементов
-void summarize(Number& first, Number& second, size_t& left, size_t& right,
-        size_t& overflow, int& rank, int& size, size_t& overflowDepth, size_t& N,
-        bool& lastOverflowSend, bool& lastOverflowRecv) {
-    bool second_null = true;
-    for (auto i: second) {
-        if (i != 0) {
-            second_null = false;
-        }
-    }
-    // Пересчет массива только в случае:
-    // это первая итерация
-    // на предыдущей произошло переполнение
-    if ((overflow != 0) || !second_null) {
-        for (size_t i = left; i < right; ++i) {
-            first[i] += second[i] + overflow;
-            if (first[i] >= million) {
-                overflow = 1;
-                first[i] -= million;
-            } else {
-                overflow = 0;
-            }
-        }
-    }
-    
-    // Отсылаем если есть следующий процесс
-    // Не отсылаем, если в прошлый раз отослали 0, так как переполниться снова
-    // невозможно
-    if ((rank != (size - 1) && !lastOverflowSend)) {
-        // На следующей итерации отсылка не нужна
-        if (overflow == 1) {
-            lastOverflowSend = true;
-        }
-        MPI_Send(&overflow, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-    }
-
-    // Принимаем только в следующих случаях:
-    // есть предыдущий процесс
-    // все предыдущие процессы уже должны были передать
-    // Не принимаем, если в прошлый раз отослали 1, так как переполниться снова
-    // невозможно
-    if ((rank != 0) && (overflowDepth < rank) && !lastOverflowRecv){
-        MPI_Recv(&overflow, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD,
-        MPI_STATUS_IGNORE);
-        if (overflow == 1) {
-            lastOverflowRecv = true;
+int summarize(Number& answer, Number& first, Number& second, size_t& left, size_t& right,
+        size_t overflow) {
+    for (size_t i = 0; i < right - left; ++i) {
+        answer[i] = first[left + i] + second[left + i] + overflow;
+        if (first[i] >= million) {
+            overflow = 1;
+            first[i] -= million;
+        } else {
+            overflow = 0;
         }
     }
 
-    // Пересчитываем заново
-    if (++overflowDepth <= rank) {
-        // Требуется пересчет только с переполненой цифрой
-        Number auxiliary(N);
-        summarize(first, auxiliary, left, right, overflow, rank, size,
-        overflowDepth, N, lastOverflowSend, lastOverflowRecv);
-
-        // Если элемент самый последний, то вместо отсылки инкрементируем число
-        if (first[N - 1] == 0) {
-            ++first[right - 1];
-        }
-    }
-
-    return;
+    return (int)overflow;
 }
 
 // Подсчет необходимого количество ведущих нулей
@@ -191,22 +142,53 @@ int main(int argc, char** argv) {
     size_t left_index = rank * (N / size);
     size_t right_index = (rank != size - 1) ? (rank + 1) * (N / size) : N;
 
-    // Переменная, переносимая в следующий "разряд"
-    size_t overflow = 0;
-    // Переменная, определяющая глубину рекурсии "переполнения"
-    size_t overflowDepth = 0;
-    // Переменная, отвечающая за то, отослали ли мы в прошлый раз 1
-    bool lastOverflowSend = false;
-    // Переменная, отвечающая за то, приняли ли мы в прошлый раз 1
-    bool lastOverflowRecv = false;
-
     //Начинаем отсчет времени
     double start = MPI_Wtime();
-    for (int k = 0; k < 100000; k++) {
-    // Вычисление суммы
-        summarize(first_number, second_number, left_index, right_index, overflow, rank, size, overflowDepth, N, lastOverflowSend, lastOverflowRecv);
+
+    // Бит переполнения
+    int overflow = 0;
+    // Вспомогательные массивы, посчитанные параллельно, на случай переполнения и нет
+    Number with_overflow(right_index - left_index), without_overflow(right_index - left_index);
+
+    // Функции возвращают бит переполнения на случай получения переполнения и
+    // нет из предыдущего процесса
+    int with = summarize(with_overflow, first_number, second_number, left_index, right_index, 1);
+    int without = summarize(with_overflow, first_number, second_number, left_index, right_index, 0);
+
+    if (rank != 0) {
+        MPI_Recv(&overflow, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    
+    // Вектор в котором будем хранить нужный вектор, посчитанный ранее
+    Number answer(right_index - left_index);
+    // Рассчитываем правильный ответ и следующий бит переполнения по полученному
+    switch (overflow) {
+    case 0:
+        answer = without_overflow;
+        overflow = without;
+        break;
+    
+    case 1:
+        answer = with_overflow;
+        overflow = with;
+        break;
+    }
+    
+    // Отсылаем вновь посчитанный бит переполнения
+    if (rank != size - 1) {
+        MPI_Send(&overflow, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
     }
     double end = MPI_Wtime() - start;
+
+    // Обновление результата нулевым процессом
+    if (rank == 0) {
+        size_t size = answer.size();
+        for (size_t i = 0; i < size; ++i) {
+            first_number[i] = answer[i];
+        }
+    }
+
+
     // Сбор данных со всех процессов после последней итерации цикла
 	if(size > 1) {
 		if(rank == 0) {
@@ -218,13 +200,18 @@ int main(int argc, char** argv) {
                 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			}
 		} else {
-			MPI_Send(first_number.data() + left_index, right_index - left_index,
-            MPI_INT, 0, 0, MPI_COMM_WORLD);
+			MPI_Send(answer.data(), right_index - left_index, MPI_INT, 0, 0, MPI_COMM_WORLD);
             result.close();
             MPI_Finalize();
             return EXIT_SUCCESS;
 		}
 	}
+    
+    // Костыль на случай последней итерации и обнуления последней ячейки
+    if (first_number[N - 1] == 0) {
+        first_number[N - 1] = million;
+    }
+
     // Запись результата в файл
     // В случае отсутствия элементов записываем 0
     result << (first_number.empty() ? 0 : first_number.back());
