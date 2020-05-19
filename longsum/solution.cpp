@@ -43,9 +43,9 @@ int summarize(Number& answer, Number& first, Number& second, size_t& left, size_
         size_t overflow) {
     for (size_t i = 0; i < right - left; ++i) {
         answer[i] = first[left + i] + second[left + i] + overflow;
-        if (first[i] >= million) {
+        if (answer[i] >= million) {
             overflow = 1;
-            first[i] -= million;
+            answer[i] -= million;
         } else {
             overflow = 0;
         }
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
     // Функции возвращают бит переполнения на случай получения переполнения и
     // нет из предыдущего процесса
     int with = summarize(with_overflow, first_number, second_number, left_index, right_index, 1);
-    int without = summarize(with_overflow, first_number, second_number, left_index, right_index, 0);
+    int without = summarize(without_overflow, first_number, second_number, left_index, right_index, 0);
 
     if (rank != 0) {
         MPI_Recv(&overflow, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);

@@ -1,4 +1,7 @@
 #!/bin/bash
+export TMPDIR=/tmp  
+export PMIX_MCA_gds=hash
+
 echo "Compilation"
 FULLDIR=$(dirname "$0")
 mpic++ -Wall -Wextra -pedantic -O0 -Wshadow -Wformat=2 -Wfloat-equal \
