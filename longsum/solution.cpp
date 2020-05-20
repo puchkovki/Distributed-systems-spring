@@ -1,7 +1,7 @@
 #include <mpi.h>
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include <vector>
 
 #define MILLION 1000*1000*1000
@@ -128,8 +128,8 @@ int main(int argc, char** argv) {
     // Строки, содержащие числа из файлов
     std::string first_string, second_string;
     // Запись чисел в строки
-    while (std::getline(first_stream, first_string)) {}
-    while (std::getline(second_stream, second_string)) {}
+    std::getline(first_stream, first_string);
+    std::getline(second_stream, second_string);
 
     // Конец работы с файлами-числами
     first_stream.close();
@@ -198,7 +198,6 @@ int main(int argc, char** argv) {
             first_number[i] = answer[i];
         }
     }
-
 
     // Сбор данных со всех процессов после последней итерации цикла
     if (size > 1) {
