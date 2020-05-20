@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 	omp_set_num_threads(size);
 	#pragma omp parallel private(n)
 	{
-		for (n = 0; n < N; n++) {	 // Цикл по времени
+		for (n = 0; n < N; n++) { // Цикл по времени
 			// Явный метод
 			#pragma omp for
 			for (m = 1; m < M - 1; m++) {

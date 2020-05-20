@@ -78,11 +78,11 @@ int main(int argc, char **argv)
 		left_index[i] = left_index[i - 1] + (M / size) + ((i - 1) < ((M % size) - 2));
 	}
 
-	// Создание замка
+	// Создание массив замков
     omp_lock_t* lock = (omp_lock_t*) malloc(sizeof(omp_lock_t) * 2 * size);
-    //Инициализация замка
+    //Инициализация массива замков
 	for (size_t i = 0; i < 2 * size; ++i) {
-    	omp_init_lock(&lock[i]);
+		omp_init_lock(&lock[i]);
 	}	
 
 	// Вспомогательная переменная, показывающая кол-во процессов, закончивших данную итерацию цикла
