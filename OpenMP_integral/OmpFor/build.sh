@@ -1,9 +1,10 @@
 #!/bin/bash
 echo "Compilation"
 FULLDIR=$(dirname "$0")
-gcc -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wcast-qual \
--Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=undefined \
--fno-sanitize-recover=all -fstack-protector -fopenmp -o $FULLDIR/test $FULLDIR/time.c -lm || exit 1
+gcc -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion \
+-Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC \
+-fsanitize=undefined -fno-sanitize-recover=all -fstack-protector -fopenmp -o \
+$FULLDIR/test $FULLDIR/time.c -lm || exit 1
 
 echo "Making res directory if necessary"
 mkdir -p $FULLDIR/res

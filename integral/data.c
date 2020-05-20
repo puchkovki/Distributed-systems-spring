@@ -8,17 +8,17 @@ int main(void) {
     FILE* data = fopen("res/data.txt", "rt");
     FILE* acceleration = fopen("res/acceleration.txt", "w");
     FILE* efficiency = fopen("res/efficiency.txt", "w");
-    if(!data) {
+    if (!data) {
         printf("Error open data.txt\n");
         return EXIT_FAILURE;
     }
-    if(!acceleration) {
+    if (!acceleration) {
         printf("Error open acceleration.txt\n");
         return EXIT_FAILURE;
-    } 
-    while(!feof(data)) {
-        if(fscanf(data,"%d %lf\n", &size, &time) != 0) {
-            if(size == 1) {
+    }
+    while (!feof(data)) {
+        if (fscanf(data, "%d %lf\n", &size, &time) != 0) {
+            if (size == 1) {
                 tmp = time;
             }
             fprintf(acceleration, "%d %lf\n", size, tmp / time);

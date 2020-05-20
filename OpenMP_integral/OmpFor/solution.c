@@ -4,11 +4,10 @@
 #include <unistd.h>
 #include <omp.h>
 
-//Определение функции
+// Определение функции
 double Func(double x) {
-    //Недействительные значения не должны вносить вклад в интеграл
-    if(x > 2) 
-    {
+    // Недействительные значения не должны вносить вклад в интеграл
+    if (x > 2) {
         return 0;
     }
     return sqrt(4 - x*x);
@@ -22,7 +21,7 @@ int main(int argc, char **argv) {
 
     if (argc > 1) {
         N = atoll(argv[1]);
-		if (argc > 2) {
+        if (argc > 2) {
             size = atoi(argv[2]);
         }
     }
@@ -35,15 +34,15 @@ int main(int argc, char **argv) {
 
     // Задаем кол-во процессов для следующего распараллеливания
     omp_set_num_threads(size);
-    // Статическое распределение итераций с шагом в 10^4, правильное 
-    // суммирование всех параллельных вычислений
+    // Статическое распределение итераций с шагом в 10^4
+    // правильное суммирование всех параллельных вычислений
     #pragma omp parallel for schedule(static, 10000) reduction(+: result)
-        for(size_t i = 1; i < N; i++) {
+        for (size_t i = 1; i < N; i++) {
             result += Func(i * h);
         }
     result *= h;
 
-    //Вывод кол-ва процессов, используемых программой, и значение интеграла
+    // Вывод кол-ва процессов, используемых программой, и значение интеграла
     printf("%d %lf\n", size, result);
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
