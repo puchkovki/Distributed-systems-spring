@@ -49,7 +49,7 @@
 2. `Time < 0` смоделировать нельзя.
 3. При `M < 2` метод не сходится.
 4. При `M < size` задача становится нелогичной.
-5. Шаг по времени ![equation](https://latex.codecogs.com/gif.latex?\tau&space;=&space;C&space;\cdot&space;h), где `h` — шаг по координате, а число Куранта `C= 0.3`.
+5. Шаг по времени ![equation](https://latex.codecogs.com/gif.latex?\tau&space;=&space;C&space;\cdot&space;h), где `h` — шаг по координате, а число Куранта `C = 0.3`.
 
 ### **Распределение температуры**
 
